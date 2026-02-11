@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// 1. MODUL AUTH & USER
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique // Contoh: ADMIN, MANAGER, STAFF
+  permissions String[] // Array berisi izin akses
+  users       User[]
+}
+
+// 2. MODUL INVENTORY (Master Data)
+model Product {
+  id          String   @id @default(uuid())
+  sku         String   @unique // Stock Keeping Unit (Kode Barang)
+  name        String
+  description String?
+  price       Decimal  @db.Decimal(15, 2)
+  stock       Int      @default(0)
+  category    String
+  movements   StockMovement[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// 3. LOG AUDIT (Data Engineering Mindset)
+// Mencatat setiap perubahan stok (Masuk/Keluar)
+model StockMovement {
+  id        String   @id @default(uuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Int      // Positif untuk barang masuk, negatif untuk keluar
+  type      String   // Contoh: 'PURCHASE', 'SALE', 'ADJUSTMENT'
+  reason    String?
+  createdAt DateTime @default(now())
+}
